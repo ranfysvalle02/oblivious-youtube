@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply w-full h-full flex flex-col;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-800/85;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-300/0 transition-colors rounded-lg;
+  }
+  :hover::-webkit-scrollbar-track {
+    @apply bg-slate-300/0;
+  }
+  /* ::-webkit-scrollbar-track:hover {
+    @apply bg-slate-300/35;
+  } */
+
+  ::-webkit-scrollbar-thumb {
+    /* @apply bg-slate-300/50 transition-colors rounded-lg; */
+    @apply bg-slate-300/0 transition-colors rounded-lg;
+  }
+  :hover::-webkit-scrollbar-thumb {
+    @apply bg-slate-300/75;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-300;
+  }
+}
