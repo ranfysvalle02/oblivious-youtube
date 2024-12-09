@@ -6,7 +6,7 @@ export default function Articles() {
   return (
     <div className="">
       <div className="mb-9 flex items-center">
-        <h3 className="text-slate-900 text-2xl leading-normal font-semibold">Top Articles</h3>
+        <h3 className="text-slate-900 text-2xl leading-normal font-semibold">Top Videos</h3>
         <Link className="ml-auto text-violet-500 hover:text-violet-700 text-xl font-semibold" href="">See all</Link>
       </div>
       
