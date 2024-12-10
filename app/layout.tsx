@@ -23,7 +23,6 @@ export default function RootLayout({
       <body className={urbanistFont.className}>
         <SideBar
           navItems={<>
-            <SideBarItem icon={<Icon icon="dashboard"/>} label="Dashboard"/>
             <SideBarItem icon={<Icon icon="media"/>} label="Content" active/>
             </>}
           footerItems={<>

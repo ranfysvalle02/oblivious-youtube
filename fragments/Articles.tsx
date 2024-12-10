@@ -1,8 +1,33 @@
+"use client"
 import ArticleItem from "@/components/AtricleItem";
 import HorizontalScroll from "@/components/HorizontalScroll";
 import Link from "next/link";
+import React from "react";
+import { useEffect } from "react";
 
 export default function Articles() {
+  const [articles, setArticles] = React.useState([]);
+  useEffect(() => {  
+    fetch('https://ranfysvalle02--oblivious-youtube-top-videos.modal.run')  
+      .then((response) => response.json())  
+      .then((data) => {  
+        // Map the API data to match your ArticleItemProps structure  
+        const mappedArticles = data.map((item:any) => ({  
+          id: item.video_id,  
+          imageSrc: `https://img.youtube.com/vi/${item.video_id}/hqdefault.jpg`,  
+          title: item.title,  
+          summary: item.description || '',  
+          field: 'Video',  
+          date: item.timestamp_str,  
+          writer: item.channel || 'Unknown',  
+          status: 'Published',  
+          tags: [],  
+        }));  
+        setArticles(mappedArticles);  
+      })  
+      .catch((error) => console.error('Error fetching articles:', error));  
+  }, []);  
+  
   return (
     <div className="">
       <div className="mb-9 flex items-center">
@@ -12,72 +37,20 @@ export default function Articles() {
       
       <HorizontalScroll className="mb-10">
         <div className="flex gap-4 sm:gap-8">
-          <ArticleItem
-            id="1"
-            imageSrc="/images/article/jason-goodman-Oalh2MojUuk-unsplash.jpg"
-            title="7 Rules of Effective Branding"
-            summary="Why Branding matters for your Business"
-            field="Business"
-            date="20 Sep 2022"
-            writer="Maria Doe"
-            status="Created"
-            tags={['Branding', 'Communication', 'Branding']}
-          />
-          <ArticleItem
-            id="2"
-            imageSrc="/images/article/kyle-glenn-nXt5HtLmlgE-unsplash.jpg"
-            title="Research on biodiversity an..."
-            summary="Lorem ipsum dolor sit amet, consectetur"
-            field="Economy"
-            date="20 Sep 2022"
-            writer="Maria Doe"
-            status="Published"
-            tags={['World', 'Population']}
-          />
-          <ArticleItem
-            id="3"
-            imageSrc="/images/article/marco-oriolesi-wqLGlhjr6Og-unsplash.jpg"
-            title="Close and historical ties to h..."
-            summary="Lorem ipsum dolor sit amet, consectetur"
-            field="Politics"
-            date="20 Sep 2022"
-            writer="Maria Doe"
-            status="Published"
-            tags={['Politics', 'Defense']}
-          />
-          <ArticleItem
-            id="4"
-            imageSrc="/images/article/jason-goodman-Oalh2MojUuk-unsplash.jpg"
-            title="7 Rules of Effective Branding"
-            summary="Why Branding matters for your Business"
-            field="Business"
-            date="20 Sep 2022"
-            writer="Maria Doe"
-            status="Created"
-            tags={['Branding', 'Communication', 'Branding']}
-          />
-          <ArticleItem
-            id="5"
-            imageSrc="/images/article/kyle-glenn-nXt5HtLmlgE-unsplash.jpg"
-            title="Research on biodiversity an..."
-            summary="Lorem ipsum dolor sit amet, consectetur"
-            field="Economy"
-            date="20 Sep 2022"
-            writer="Maria Doe"
-            status="Published"
-            tags={['World', 'Population']}
-          />
-          <ArticleItem
-            id="6"
-            imageSrc="/images/article/marco-oriolesi-wqLGlhjr6Og-unsplash.jpg"
-            title="Close and historical ties to h..."
-            summary="Lorem ipsum dolor sit amet, consectetur"
-            field="Politics"
-            date="20 Sep 2022"
-            writer="Maria Doe"
-            status="Published"
-            tags={['Politics', 'Defense']}
-          />
+          {articles.map((article:any) => (  
+              <ArticleItem  
+                key={article.id}  
+                id={article.id}  
+                imageSrc={article.imageSrc}  
+                title={article.title}  
+                summary={article.summary.slice(0, 200)}  
+                field={article.field}  
+                date={article.date}  
+                writer={article.writer}  
+                status={article.status}  
+                tags={article.tags}  
+              />  
+            ))}  
         </div>
       </HorizontalScroll>
     </div>

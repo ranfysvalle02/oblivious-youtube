@@ -50,14 +50,7 @@ export default function ArticleItem({
         </svg>
         <div className="mr-auto text-slate-400 font-semibold">{date}</div>
         <div className="flex items-center gap-2">
-          <Image
-            className="w-[30px] h-[30px] rounded-full"
-            src="/images/avatars/ben-den-engelsen-ZEjjjYnMYbo-unsplash.jpg"
-            alt={title}
-            width={30}
-            height={30}
-          />
-          <div className="font-semibold text-black">{writer}</div>
+          
         </div>
       </div>
 
@@ -66,7 +59,7 @@ export default function ArticleItem({
           {title}
         </h4>
         <div className={cn('px-[20px] py-[10px] hidden sm:block font-semibold text-center text-nowrap leading-tight rounded-[5px]', status === 'Created' && 'bg-violet-100 text-violet-500', status === 'Published' && 'bg-teal-100/75 text-teal-600')}>
-          {status}
+          {status==='Published' ? 'Processed' : status}
         </div>
       </div>
       <p className="mb-3 text-slate-400">{summary}</p>
@@ -85,7 +78,7 @@ export default function ArticleItem({
       <div className="flex items-stretch gap-4">
         <Link
           className="px-6 py-4 grow text-violet-500 bg-violet-100 hover:bg-violet-200 active:scale-95 transition will-change-transform rounded-[10px] font-semibold text-center"
-          href=""
+          href={{ pathname: `https://www.youtube.com/watch`, query: { v: id }}} target='_blank'
         >
           View
         </Link>

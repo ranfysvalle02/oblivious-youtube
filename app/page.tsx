@@ -24,7 +24,6 @@ export default function Content() {
       <Dashboard />
       <Articles />
       <Stories />
-      <Advertisements />
     </TopBar>
   )
 }

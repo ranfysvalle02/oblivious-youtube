@@ -8,10 +8,19 @@ from langchain_ollama import OllamaEmbeddings
 import ray    
 from yt_dlp import YoutubeDL    
 import requests  
-  
+
 load_dotenv()    
 ray.init()    
-        
+AZURE_OPENAI_ENDPOINT = os.environ["OPENAI_API_BASE"]  
+AZURE_OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]  
+
+  
+def send_messages(az_client, messages):  
+    return az_client.chat.completions.create(  
+        messages=messages,  
+        model="gpt-4o-mini"  
+    ).choices[0].message.content  
+      
 # Configure logging    
 logging.basicConfig(    
     level=logging.INFO,    
@@ -191,52 +200,93 @@ def process_single_video_transcript(video_id, CONFIG):
             )    
             client.close()  
             return    
-  
+        
+        
+
         # Create Document    
         from langchain.docstore.document import Document    
         document = Document(page_content=transcript_text)  
   
-        # Add metadata    
-        document.metadata = {  
-            "timestamp": time.time(),  
-            "timestamp_str": time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime(time.time())),  
-            "config": str(CONFIG["TYPE"] + ":" + CONFIG["ID"]),  
-            "source": video_id,  
-            "youtube_metadata": {  
-                "title": info_dict.get('title'),  
-                "description": info_dict.get('description'),  
-                "upload_date": info_dict.get('upload_date'),  
-                "uploader": info_dict.get('uploader'),  
-                "uploader_id": info_dict.get('uploader_id'),  
-                "uploader_url": info_dict.get('uploader_url'),  
-                "channel_id": info_dict.get('channel_id'),  
-                "channel_url": info_dict.get('channel_url'),  
-                "duration": info_dict.get('duration'),  
-                "view_count": info_dict.get('view_count'),  
-                "like_count": info_dict.get('like_count'),  
-                "categories": info_dict.get('categories'),  
-                "tags": info_dict.get('tags'),  
-                "webpage_url": info_dict.get('webpage_url'),  
-                "thumbnails": info_dict.get('thumbnails'),  
-                # Add any other metadata fields you need  
+        if not info_dict.get('title') or not info_dict.get('description'):  
+            logger.warning(f"No title or description available for video {video_id}. Skipping.")
+  
+            # Store in unprocessed collection    
+            unprocessed_collection.update_one(
+                {"videoId": video_id},
+                {"$set": {
+                    "videoId": video_id,
+                    "reason": "No title or description available",
+                    "config": str(CONFIG["TYPE"] + ":" + CONFIG["ID"]),
+                    "timestamp": time.time(),
+                }},
+                upsert=True
+            )
+        else:
+            # Add metadata    
+            document.metadata = {  
+                "timestamp": time.time(),  
+                "timestamp_str": time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime(time.time())),  
+                "config": str(CONFIG["TYPE"] + ":" + CONFIG["ID"]),  
+                "source": video_id,  
+                "youtube_metadata": {  
+                    "title": info_dict.get('title'),  
+                    "description": info_dict.get('description'),  
+                    "upload_date": info_dict.get('upload_date'),  
+                    "uploader": info_dict.get('uploader'),  
+                    "uploader_id": info_dict.get('uploader_id'),  
+                    "uploader_url": info_dict.get('uploader_url'),  
+                    "channel_id": info_dict.get('channel_id'),  
+                    "channel_url": info_dict.get('channel_url'),  
+                    "duration": info_dict.get('duration'),  
+                    "view_count": info_dict.get('view_count'),  
+                    "like_count": info_dict.get('like_count'),  
+                    "categories": info_dict.get('categories'),  
+                    "tags": info_dict.get('tags'),  
+                    "webpage_url": info_dict.get('webpage_url'),  
+                    "thumbnails": info_dict.get('thumbnails'),  
+                    # Add any other metadata fields you need  
+                }  
             }  
-        }  
-  
-        # Split the transcript into chunks    
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=2750, chunk_overlap=250)    
-        docs = text_splitter.split_documents([document])    
-  
-        # Delete previous transcripts for this video_id    
-        collection.delete_many({"source": video_id})    
-  
-        # Create vector store from documents    
-        vector_store = MongoDBAtlasVectorSearch(    
-            embedding=embeddings,    
-            collection=collection    
-        )    
-        vector_store.add_documents(docs)    
-  
-        logger.info(f"Successfully processed video {video_id}")    
+    
+            # Split the transcript into chunks    
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=2750, chunk_overlap=250)    
+            docs = text_splitter.split_documents([document])    
+    
+            # Delete previous transcripts for this video_id    
+            collection.delete_many({"source": video_id})    
+    
+            # Create vector store from documents    
+            vector_store = MongoDBAtlasVectorSearch(    
+                embedding=embeddings,    
+                collection=collection    
+            )    
+            vector_store.add_documents(docs)    
+    
+            logger.info(f"Successfully processed video {video_id}")
+        from openai import AzureOpenAI  
+        az_client = AzureOpenAI(  
+            azure_endpoint=AZURE_OPENAI_ENDPOINT,  
+            api_version="2023-07-01-preview",  
+            api_key=AZURE_OPENAI_API_KEY  
+        )  
+        ai_summary = send_messages(az_client=az_client, messages=[  
+            {"role": "user", "content": "Youtube video description: " + info_dict.get('description') + "\n\nHere is the video transcript: \n\n[transcript]\n" + str(transcript_text)[:1500] + "\n[/transcript]"},  
+            {"role": "user", "content": "\n\nPlease provide a summary of this Youtube video in ~100 characters, in such a way that the essence of the video is captured."},
+        ]) 
+        # Store in processed collection    
+        collection.update_one(
+            {"source": video_id},
+            {"$set": {
+                "source": video_id,
+                "config": str(CONFIG["TYPE"] + ":" + CONFIG["ID"]),
+                "timestamp": time.time(),
+                "full_text": transcript_text,
+                "ai_summary": ai_summary,
+                "title": info_dict.get('title'),
+                # Add any other metadata fields you need
+            }},
+            upsert=True
+        )
         client.close()    
   
     except Exception as e:    
